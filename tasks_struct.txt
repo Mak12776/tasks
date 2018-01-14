@@ -1,0 +1,51 @@
+
+
+tasks.data hexdump:
+	0	1	2	3	4	5	6	7	8	9	A	B	C	...		]	[	...			]
+	.	t	a	s	k	s	{v. }	{ items num }	{ item[0]	}	{ item[1]		}
+
+> version: 001
+
+item hexdump:
+	{ item type: 2bit } { have skip: 1bit } { item info: 5bit } { skip ammount: int } { item data }
+
+type:
+	00	task
+		task info:
+			{ reversed: 4bit }
+			{ desc: 1bit }
+		item data:
+			{ creation date: long }
+			{ last modification date: long }
+			{ title: variable }
+			if (desc) { description file name }
+	
+	01	job
+		job info:
+			{ reversed: 4bit }
+			{ done: 1bit }
+		job data:
+			{ task id: int }
+			if (done) { completion date: long }
+		
+	10	todo
+		todo info:
+			{ reversed: 4bit }
+			{ period: 1bit }
+		todo data:
+			{ task id: int }
+			if (period) { start time: long }
+			if (period) { end time: long }
+			
+	11	dayWork
+		dayWork info:
+			{ reversed: 3bit }
+			{ repeat: 1bit }
+			{ count: 1bit } 
+		dayWork data:
+			{ task id: int }
+			{ date: long }
+			if (repeat) { repeat period: byte }
+			if (count) { count resolution: byte  }
+
+------------------------------------------------------------------

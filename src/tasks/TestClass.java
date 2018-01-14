@@ -36,38 +36,72 @@ public class TestClass
 		}
 	}
 	
-	private static final String[] things = {"Hello", "Bye", "Good", "Summer", "Amin", "Armin", "Ali"};
+	private static final String[] things = {"Jack", "Javad", "Akbar", "Hamid", "Amin", "Armin", "Ali"};
 	private static Random rand = new Random();
-	public static void testCreator()
+	
+	public static String randomName()
 	{
-		Random rand = new Random();
-		DoubleLinkedItem.Creator<Task> taskCreator = new DoubleLinkedItem.Creator<Task>(2 + rand.nextInt(12));
-		for (int i = 0; i < 10; i++)
+		return things[rand.nextInt(things.length)];
+	}
+	
+	public static Task newRandomTask()
+	{
+		Task result = new Task();
+		result.title = randomName();
+		return result;
+	}
+	
+	public static void testDoubleLinkedItemsCreator(int seed)
+	{
+		if (seed == 0)
 		{
-			taskCreator.skip(rand.nextInt(6));
-			taskCreator.add(new Task(things[rand.nextInt(things.length)]));
+			seed = rand.nextInt();
+		}
+		rand.setSeed(seed);
+		DoubleLinkedItem.Creator<Task> taskCreator = new DoubleLinkedItem.Creator<Task>(256);
+		for (int i = 0; i < 50; i++)
+		{
+			taskCreator.skip(rand.nextInt(11) + 1);
+			taskCreator.add(newRandomTask());
 			for (int j = 0, end = rand.nextInt(3); j < end; j++)
 			{
-				taskCreator.add(new Task(things[rand.nextInt(things.length)]));
+				taskCreator.add(newRandomTask());
 			}
 		}
 		taskCreator.finish();
-		System.out.println(taskCreator.getResult().test());
+		taskCreator.getResult().print();
+		taskCreator.getResult().test();
+		System.out.println("-------------------------- random --------------------------");
+		System.out.println("seed of random is " + seed);
 	}
 	
-	public static void testDoubleLinkedArrays()
+	public static void testDoubleLinkedItemsMethods()
 	{
 		DoubleLinkedItem<Task> tasks = new DoubleLinkedItem<Task>(5);
-		for (int i = 0; i < 28; i++)
+		for (int i = 0; i < 20; i++)
 		{
-			tasks.addItem(new Task("Item in " + String.valueOf(i)));
+			tasks.addItem(newRandomTask());
 		}
-		int end = (tasks.getLength() / 2);
-		for (int j = 0; j < end; j++)
+		
+		tasks.test();
+	}
+	public static void testDoubleLinkedItemsOptimize()
+	{
+		DoubleLinkedItem.Creator<Task> taskCreator = new DoubleLinkedItem.Creator<Task>(30);
+		for (int i = 0; i < 50; i++)
 		{
-			tasks.removeItem(rand.nextInt(tasks.getLength()));
+			taskCreator.skip(rand.nextInt(11) + 1);
+			taskCreator.add(newRandomTask());
+			for (int j = 0, end = rand.nextInt(3); j < end; j++)
+			{
+				taskCreator.add(newRandomTask());
+			}
 		}
-		tasks.optimize();
-		System.out.println(tasks.test());
+		taskCreator.finish();
+		taskCreator.getResult().print();
+		System.out.println("AFTER OPTIMIZATION:");
+		System.out.println("OPTIMIZATION EFFECT:" + taskCreator.getResult().optimizeEffect());
+		taskCreator.getResult().optimize();
+		taskCreator.getResult().print();
 	}
 }

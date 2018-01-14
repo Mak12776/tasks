@@ -1,0 +1,103 @@
+
+types: task | job | todo | dayWork
+
+usage: ts [command [type] [info]] [global options]
+
+type:
+	task		ts
+	job			jb
+	todo		td
+	dayWork		dw
+
+global options:
+	-F, --force				force
+	-Q, --quiet				quiet
+	-C,	--command-line		run command line
+	-Y, --yes				yes
+
+commands summary: add, del, list, show, search, clear, purge, optimize
+commands:
+	(a)dd [type] [item info]
+	item info:
+		task
+			title 			needed
+		job
+			id or title		needed				
+			-d, --date		date				optional
+		todo
+			-i, --id		id/title			needed
+			-t, --title		title				needed
+			-f, --from		date				needed
+			-u,	--until		date				{ needed
+			-t,	--to		date				}
+		dayWork
+			-i, --id		id/title			needed
+			-t, --title		title				needed
+			-r, --repeat	repeat				optional
+			-c, --count		count				optional
+	(d)el [name or id] [-Y]
+		
+	(c)lear [type] [info] [-Y]
+	type:
+		task
+			info:
+				
+		job
+		todo
+		dayWork
+	(l)ist [type] [filter]
+	type filters:
+		task
+		job
+			default: undone
+			-a, --all				all job
+			-d, --done				only done
+		todo
+			default: globals, now
+			-a,	--all				all	todo
+			-f, --future			also future
+			-p, --pass				also pass
+		dayWork
+	(s)how [type] [task title or id]
+	type:
+		task
+		job
+		todo
+		dayWork
+	[(p)urge|(o)ptimize]
+
+item info:
+		task
+			-t, --title		title
+		job
+			-i, --id		id/title
+			-t, --title		title
+			-d, --date		date
+		todo
+			-i, --id		id/title
+			-t, --title		title
+			-f, --from		date
+			-u,	--until		date
+			-t,	--to		date
+		dayWork
+			-i, --id		id/title
+			-t, --title		title
+			-r, --repeat	repeat
+			-c, --count		count
+
+known dates:
+	+1d		tomorrow
+	+1w		next week
+	+1m		next month
+	+1y		next year
+
+	1w		one week
+	12y		12 month
+
+	[-+]<num>[H|M|S][<num>[H|M|S] ... ]
+	[-+]<num>[d|w|m|y][<num>[d|w|m|y] ... ]
+	[[month/]day[/[20]yy]]] [hour[:minute]](pm|am)
+
+	-f 29 5:10pm -u 10d
+	-f = -t +2d
+	

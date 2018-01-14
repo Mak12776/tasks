@@ -4,13 +4,15 @@ package tasks;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import javax.management.RuntimeErrorException;
+
 import exceptions.ArgumentParsingException;
 
 public class Parser
 {
 	private static void printHelp()
 	{
-		// TODO: here we write info
+		// TODO: here we write help info to stdout
 		System.out.println("help of program");
 	}
 	
@@ -110,6 +112,56 @@ public class Parser
 		return false;
 	}
 	
+	private static boolean checkLongGlobalOption(String option)
+	{
+		if (option.equals("force"))
+		{
+			force = true;
+			return true;
+		}
+		if (option.equals("quiet"))
+		{
+			quiet = true;
+			return true;
+		}
+		if (option.equals("command-line"))
+		{
+			runCommandLine = true;
+			return true;
+		}
+		if (option.equals("yes"))
+		{
+			yes = true;
+			return true;
+		}
+		return false;
+	}
+	
+	private static boolean checkShortGlobalOption(char ch)
+	{
+		if (ch == 'F')
+		{
+			force = true;
+			return true;
+		}
+		if (ch == 'Q')
+		{
+			quiet = true;
+			return true;
+		}
+		if (ch == 'C')
+		{
+			runCommandLine = true;
+			return true;
+		}
+		if (ch == 'Y')
+		{
+			yes = true;
+			return true;
+		}
+		return false;
+	}
+	
 	private static boolean checkLongInfoOption(String option)
 	{
 		switch(itemType)
@@ -186,7 +238,7 @@ public class Parser
 				return true;
 			}
 		case none:
-			return false;
+			throw new RuntimeException("wrong behavior on option Argument");
 		}
 		return false;
 	}
@@ -266,7 +318,7 @@ public class Parser
 				return true;
 			}
 		case none:
-			return false;
+			throw new RuntimeException("wrong behavior in ch argument");
 		}
 		return false;
 	}
@@ -292,7 +344,7 @@ public class Parser
 					}
 					throw new ArgumentParsingException("invalid item type: " + args[index]);
 				case title:
-					itemInfos.put("title", args[index].trim());
+					addItemInfo("title", args[index].trim());
 					continue;
 				}
 			}
@@ -314,24 +366,8 @@ public class Parser
 					{
 						throw new ArgumentParsingException("unknown option: " + args[index]);
 					}
-					if (subStr.equals("quiet"))
+					if (checkLongGlobalOption(subStr))
 					{
-						quiet = true;
-						continue;
-					}
-					if (subStr.equals("command-line"))
-					{
-						runCommandLine = true;
-						continue;
-					}
-					if (subStr.equals("force"))
-					{
-						force = true;
-						continue;
-					}
-					if (subStr.equals("yes"))
-					{
-						yes = true;
 						continue;
 					}
 					if (subStr.equals("help"))
@@ -356,30 +392,14 @@ public class Parser
 						Ch = subStr.charAt(k);
 						if ('A' <= Ch && Ch <= 'Z')
 						{
+							if (checkShortGlobalOption(Ch))
+							{
+								continue;
+							}
 							if (Ch == 'H')
 							{
 								printHelp();
 								return false;
-							}
-							if (Ch == 'Q')
-							{
-								quiet = true;
-								continue;
-							}
-							if (Ch == 'F')
-							{
-								force = true;
-								continue;
-							}
-							if (Ch == 'Y')
-							{
-								yes = true;
-								continue;
-							}
-							if (Ch == 'C')
-							{
-								runCommandLine = true;
-								continue;
 							}
 							throw new ArgumentParsingException("invalid short global option: " + Ch);
 						}
@@ -413,7 +433,7 @@ public class Parser
 					continue;
 				}
 				break;
-			}
+			} /* switch(args[index].charAt(0)) */
 			
 			throw new ArgumentParsingException("invalid command: " + args[index]);
 		} /* for (int index = 0; index < args.length; index++) */

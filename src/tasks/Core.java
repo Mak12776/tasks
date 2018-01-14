@@ -2,6 +2,7 @@
 package tasks;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,7 +14,8 @@ public class Core
 {
 	public static final String dataFileName = "tasks.data";
 	public static final String descFolderName = "tasks.desc";
-	public static final byte[] dataSing = { 't', 'a', 's', 'k', 's' };
+	public static final byte[] dataSing = {'.', 't', 'a', 's', 'k', 's' };
+	public static final short curVers = 1;
 	private static TaskData data;
 	private static File dataFile;
 	private static File descFolder;
@@ -30,9 +32,25 @@ public class Core
 		inFile.close();
 	}
 	
-	public static void SaveData(String fileName, TaskData data) throws FileNotFoundException
+	public static void SaveData(File file, TaskData data) throws FileNotFoundException, IOException
 	{
-		FileOutputStream outStream = new FileOutputStream(new File(fileName));
-		
+		DataOutputStream outStream = null;
+		try
+		{
+			outStream = new DataOutputStream(new FileOutputStream(file));
+			outStream.write(dataSing);
+			outStream.writeShort(curVers);
+			for(Item item : data.items)
+			{
+				
+			}
+		}
+		finally
+		{
+			if (outStream != null)
+			{
+				outStream.close();
+			}
+		}
 	}
 }

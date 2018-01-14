@@ -1,0 +1,45 @@
+
+usage: ts [command [type] [identity] [info] [filter] ] [global options]
+
+commands:
+	add (type) [info]						add new item
+	del [type] (identity)					delete item
+	list [type] [filter]					list items
+	show [type] (identity)					show a item
+	clear [type] [filter]					clear items
+	search [type] [identity] [filter]		search the items
+	purge									
+	optimize
+
+global options:
+	-F, --force								force to do command any way
+	-Q, --quiet								do not write status on stdout
+	-C,	--command-line						force command line to run 
+	-Y, --yes								assume yes on all questions
+	-S, --short-help						print a short help and exit 
+	-H, --help								print this help and exit
+	-M, --manual							print manual of this program
+	--version								print version and exit
+
+info:
+	for task type:
+		-t, --title	(title)					specify title
+	for job type:
+		-i, --identity (identity)			specify identity
+		-t, --title (title)					specify title
+		-c, --completed						specify completed today
+		-d, --date (date)					specify completion date
+	for todo type:
+		-i, --identity (identity)			specify identity
+		-t, --title (title)					specify title
+		-s, --since	(date)					specify since date (default: today)
+		-u, --until	(date)					specify until date 
+	for dayWork:
+		-i, --identity (identity)			specify identity
+		-t, --title (title)					specify title
+		-r, --repeat (repeat)				specify repeat
+		-c, --count	(count)					specify count
+
+filter:
+	for task type:
+		TODO: need more thinking

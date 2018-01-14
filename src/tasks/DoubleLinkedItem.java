@@ -1,11 +1,14 @@
 package tasks;
 
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import exceptions.FinishedCreatorException;
 import exceptions.InvalidIndexException;
 import exceptions.NoSuchItemException;
 
-public class DoubleLinkedItem<T extends Item>
+public class DoubleLinkedItem<T extends Item> implements Iterable<Item>
 {
 	class Node
 	{
@@ -16,7 +19,6 @@ public class DoubleLinkedItem<T extends Item>
 		
 		public Node()
 		{
-			arrayNumber++;
 			array = new Item[arraySize];
 			length = 0;
 		}
@@ -29,11 +31,9 @@ public class DoubleLinkedItem<T extends Item>
 		
 		public Node(T item)
 		{
-			arrayNumber++;
 			array = new Item[arraySize];
 			array[0] = item;
 			length = 1;
-			itemNumber++;
 		}
 		
 		public Node(Node prev, T item)
@@ -55,21 +55,21 @@ public class DoubleLinkedItem<T extends Item>
 					item.id = baseIndex + i;
 					array[i] = item;
 					length++;
-					itemNumber++;
 					break;
 				}
 			}
 			return true;
 		}
 		
-		public void set(int index, Item item)
+		public boolean set(int index, Item item)
 		{
 			if (array[index] == null)
 			{
 				length++;
-				itemNumber++;
+				return true;
 			}
 			array[index] = item;
+			return false;
 		}
 		
 		public Item get(int index) throws NoSuchItemException
@@ -88,7 +88,6 @@ public class DoubleLinkedItem<T extends Item>
 				return false;
 			}
 			array[index] = null;
-			itemNumber--;
 			length--;
 			return true;
 		}
@@ -121,26 +120,32 @@ public class DoubleLinkedItem<T extends Item>
 		{
 			item.id = 0;
 			first = new Node(item);
+			arrayNumber++;
+			itemNumber++;
+		}
+		else if (first.add(0, item))
+		{
+			itemNumber++;
+			return;
 		}
 		else
 		{
 			Node temp = first;
-			if (temp.add(0, item))
-			{
-				return;
-			}
-			int baseIndex = 0;
+			int baseIndex = arraySize;
 			while (temp.next != null)
 			{
-				baseIndex += arraySize;
 				temp = temp.next;
 				if (temp.add(baseIndex, item))
 				{
+					itemNumber++;
 					return;
 				}
+				baseIndex += arraySize;
 			}
-			item.id = baseIndex + arraySize;
+			item.id = baseIndex;
 			temp.next = new Node(temp, item);
+			arrayNumber++;
+			itemNumber++;
 		}
 	}
 	
@@ -150,63 +155,62 @@ public class DoubleLinkedItem<T extends Item>
 		{
 			throw new NullPointerException("item argument is null.");
 		}
-		int base = index / arraySize;
-		if (base < arrayNumber)
-		{
-			Node temp = first;
-			while (base != 0)
-			{
-				temp = temp.next;
-				base--;
-			}
-			item.id = index;
-			temp.set(index % arraySize, item);
-		}
-		else
+		int baseIndex = index / arraySize;
+		if (baseIndex >= arrayNumber)
 		{
 			throw new InvalidIndexException(index);
+		}
+		Node temp = first;
+		while (baseIndex != 0)
+		{
+			temp = temp.next;
+			baseIndex--;
+		}
+		item.id = index;
+		if (temp.set(index % arraySize, item))
+		{
+			itemNumber++;
 		}
 	}
 	
 	public Object getItem(int index) throws NoSuchItemException
 	{
 		int base = index / arraySize;
-		if (base < arrayNumber)
-		{
-			Node temp = first;
-			while (base != 0)
-			{
-				temp = temp.next;
-				base--;
-			}
-			return temp.get(index % arraySize);
-		}
-		else
+		if (base >= arrayNumber)
 		{
 			throw new InvalidIndexException(index);
 		}
+		Node temp = first;
+		while (base != 0)
+		{
+			temp = temp.next;
+			base--;
+		}
+		return temp.get(index % arraySize);
 	}
 	
 	public boolean removeItem(int index)
 	{
 		int base = index / arraySize;
-		if (base < arrayNumber)
-		{
-			Node temp = first;
-			while (base != 0)
-			{
-				temp = temp.next;
-				base --;
-			}
-			return temp.del(index % arraySize);
-		}
-		else
+		if (base >= arrayNumber)
 		{
 			throw new InvalidIndexException(index);
 		}
+		Node temp = first;
+		while (base != 0)
+		{
+			temp = temp.next;
+			base--;
+		}
+		if (temp.del(index % arraySize))
+		{
+			itemNumber--;
+			return true;
+		}
+		return false;
 	}
 	
-	public int getLength()
+	public int length()
 	{
 		return itemNumber;
 	}
@@ -330,7 +334,8 @@ public class DoubleLinkedItem<T extends Item>
 		private DoubleLinkedItem<E> result;
 		private DoubleLinkedItem<E>.Node lastNode = null;
 		private int index;
-		private int skippedNumber;
+		private int baseIndex;
+		private int skippedIndex;
 		private int allSkippedNumber;
 		private boolean finished;
 		
@@ -346,33 +351,35 @@ public class DoubleLinkedItem<T extends Item>
 			finished = false;
 		}
 		
-		@SuppressWarnings("Item.id")
 		public void add(E item)
 		{
 			if (finished)
 			{
 				throw new FinishedCreatorException();
 			}
-			if (lastNode != null)
+			if (lastNode == null)
+			{
+				lastNode = (result.first = result.new Node());
+				lastNode.array[0] = item;
+				item.id = 0;
+				index = 1;
+			}
+			else
 			{
 				if (index == result.arraySize)
 				{
-					lastNode.length = index - skippedNumber;
-					skippedNumber = 0;
+					lastNode.length = index - skippedIndex;
+					skippedIndex = 0;
 					lastNode = (lastNode.next = result.new Node(lastNode));
 					lastNode.array[0] = item;
+					item.id = (++baseIndex) * result.arraySize;
 					index = 1;
 				}
 				else
 				{
-					lastNode.array[index++] = item;
+					lastNode.array[index] = item;
+					item.id = (baseIndex * result.arraySize) + (index++);
 				}
-			}
-			else
-			{
-				lastNode = (result.first = result.new Node());
-				lastNode.array[0] = item;
-				index = 1;
 			}
 		}
 		
@@ -380,37 +387,39 @@ public class DoubleLinkedItem<T extends Item>
 		{
 			if (num <= 0)
 			{
-				// TODO: throw exception instead of return
-				return;
+				throw new IllegalArgumentException("invalid num argument: " + num);
 			}
 			if (finished)
 			{
 				throw new FinishedCreatorException();
 			}
-			if (lastNode == null)
+			if (result.first == null)
 			{
-				int baseIndex = num / result.arraySize;
-				lastNode = (result.first = result.new Node());
-				while (baseIndex != 0)
-				{
-					baseIndex--;
-					lastNode = (lastNode.next = result.new Node());
-				}
-				skippedNumber = (index = num % result.arraySize);
+				baseIndex = num / result.arraySize;
+				skippedIndex = (index = num % result.arraySize);
 				allSkippedNumber = num;
+				lastNode = (result.first = result.new Node());
+				int tempIndex = baseIndex;
+				while (tempIndex != 0)
+				{
+					lastNode.next = (lastNode = result.new Node(lastNode));
+					tempIndex--;
+				}
 			}
 			else
 			{
-				int baseIndex = (index + num) / result.arraySize;
-				lastNode.length = index - skippedNumber;
+				int tempIndex;
+				lastNode.length = index - skippedIndex;
 				index += num;
-				while (baseIndex != 0)
+				baseIndex += (tempIndex = index / result.arraySize);
+				index %= result.arraySize;
+				while (tempIndex != 0)
 				{
-					baseIndex--;
-					lastNode = (lastNode.next = result.new Node());
+					lastNode.next = (lastNode = result.new Node(lastNode));
+					tempIndex--;
 				}
-				skippedNumber = (index = index % result.arraySize) - lastNode.length;
 				allSkippedNumber += num;
+				skippedIndex = index - lastNode.length;
 			}
 		}
 		
@@ -422,22 +431,82 @@ public class DoubleLinkedItem<T extends Item>
 			}
 			if (lastNode != null)
 			{
-				lastNode.length = index - skippedNumber;
-				result.itemNumber = ((result.arrayNumber-1) * result.arraySize) + index - allSkippedNumber;
+				lastNode.length = index - skippedIndex;
+				result.itemNumber = (baseIndex * result.arraySize) + index - allSkippedNumber;
+				result.arrayNumber = baseIndex + 1;
 			}
 			finished = true;
 		}
 		
 		public DoubleLinkedItem<E> getResult()
 		{
-			if (!finished)
+			if (finished)
 			{
-				return null;
+				return result;
 			}
-			return result;
+			return null;
 		}
 	}
 	
+	@Override
+	public Iterator<Item> iterator() 
+	{
+		return new ClassIterator();
+	}
+	
+	class ClassIterator implements Iterator<Item>
+	{
+		int index;
+		Node tempNode;
+		
+		public ClassIterator() 
+		{
+			tempNode = first;
+		}
+		
+		@Override
+		public boolean hasNext()
+		{
+			if (tempNode == null)
+			{
+				return false;
+			}
+			if (index == arraySize)
+			{
+				tempNode = tempNode.next;
+				if (tempNode == null)
+				{
+					return false;
+				}
+				index = 0;
+			}
+			while (tempNode.array[index] == null)
+			{
+				if ((++index) == arraySize)
+				{
+					tempNode = tempNode.next;
+					if (tempNode == null)
+					{
+						return false;
+					}
+					index = 0;
+				}
+			}
+			return true;
+		}
+
+		@Override
+		public Item next()
+		{
+			if (hasNext())
+			{
+				return tempNode.array[index++];
+			}
+			throw new NoSuchElementException();
+		}
+	}
+	
+	@SuppressWarnings("Trial")
 	public void print()
 	{
 		int nodeNum = 0;
@@ -449,7 +518,6 @@ public class DoubleLinkedItem<T extends Item>
 			{
 				if (temp.array[i] == null)
 				{
-					System.out.println("\t[" + String.valueOf(i) + "]: null");
 					continue;
 				}
 				System.out.println("\t[" + String.valueOf(i) + "]: " + String.valueOf(temp.array[i].id) + "; " + String.valueOf(temp.array[i]));
@@ -457,16 +525,19 @@ public class DoubleLinkedItem<T extends Item>
 			temp = temp.next;
 			nodeNum++;
 		}
+		System.out.println("--- info ---");
 		System.out.println("array size: " + String.valueOf(arraySize));
 		System.out.println("array number: " + String.valueOf(arrayNumber));
 		System.out.println("item number: " + String.valueOf(itemNumber));
 	}
 	
+	@SuppressWarnings("Trial")
 	public String test()
 	{
 		String errors = "";
+		String indexErrors = "";
 		int nodeNum = 0, itemNum = 0;
-		Node temp = first;
+		Node temp = first, prevNode = null;
 		while (temp != null)
 		{
 			if (temp.array.length != arraySize)
@@ -478,6 +549,10 @@ public class DoubleLinkedItem<T extends Item>
 			{
 				if (temp.array[i] != null)
 				{
+					if (temp.array[i].id != (nodeNum * arraySize) + i)
+					{
+						indexErrors += "Node[" + nodeNum + "].array[" + i + "].id: " + temp.array[i].id + " != actual id: " +  ((nodeNum * arraySize) + i) + "\n"; 
+					}
 					nodeItemNum++;
 					itemNum++;
 				}
@@ -486,6 +561,11 @@ public class DoubleLinkedItem<T extends Item>
 			{
 				errors += "Node[" + nodeNum + "].length: " + temp.length + " != actual number: " + nodeItemNum + "\n";
 			}
+			if (prevNode != temp.prev)
+			{
+				errors += "Node[" + nodeNum + "].prev: " + temp.prev + " != actual node: " + prevNode + "\n"; 
+			}
+			prevNode = temp;
 			temp = temp.next;
 			nodeNum++;
 		}
@@ -495,14 +575,17 @@ public class DoubleLinkedItem<T extends Item>
 		}
 		if (itemNum != itemNumber)
 		{
-			errors += String.format("itemNumber: %d != actual number: %d", itemNumber, itemNum);
 			errors += "itemNumber: " + itemNumber + " != actual number " + itemNum + "\n";
+		}
+		
+		if (!indexErrors.isEmpty())
+		{
+			errors += "index errors:\n" + indexErrors;
 		}
 		if (errors.isEmpty())
 		{
-			return "no error";
+			return null;
 		}
-		return errors; 
-	}
-	
+		return errors;
+	}	
 }

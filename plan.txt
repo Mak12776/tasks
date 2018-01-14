@@ -1,0 +1,47 @@
+
+[ tasks plan ]
+
+> Item have:
+	id								int
+
+> each task have: extends Item
+	creation date					long
+	last modification date			long
+	title							string
+	have description				boolean
+		description file name		string
+
+	: task list:
+		all
+
+> each job have: extends Item
+	Task							according to task size
+	done							boolean
+	completion date					long
+
+	: job list:
+		done
+		undone
+
+> each todo have: extends Item
+	Task							according to task size
+	have periods					boolean
+	Start time						long
+	end time						long
+
+	: todo list:
+		globals
+		past
+		now
+		future
+
+> each dayWork have: extends Item
+	Task
+	date							long
+	repeat							boolean
+		repeat period				every day, every week, every month, every year
+	count		 					boolean
+		count resolution			day, week, month
+
+	: dayWork list:
+		all
