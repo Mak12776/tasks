@@ -1,6 +1,8 @@
 
 package tasks;
 
+import java.io.IOException;
+
 
 public class Main
 {
@@ -9,17 +11,8 @@ public class Main
 		
 	}
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
-		DoubleLinkedItem<Task> tasks = new DoubleLinkedItem<>(4);
-		tasks.print();
-		tasks.test();
-		int num = 0;
-		for(Item task : tasks)
-		{
-			System.out.println(num + ": " + task);
-			num++;
-		}
 		
 	}
 }

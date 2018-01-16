@@ -4,6 +4,7 @@ import java.util.Random;
 import java.util.Map.Entry;
 
 import exceptions.ArgumentParsingException;
+import types.Task;
 
 public class TestClass
 {

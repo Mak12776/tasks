@@ -13,6 +13,6 @@ public class InvalidIndexException extends TaskRuntimeException
 	}
 	public InvalidIndexException(int index)
 	{
-		super(String.valueOf(index));
+		super("invalid index: " + index);
 	}
 }
