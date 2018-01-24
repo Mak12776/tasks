@@ -7,6 +7,7 @@ import java.util.NoSuchElementException;
 import exceptions.FinishedCreatorException;
 import exceptions.InvalidIndexException;
 import exceptions.NoSuchItemException;
+import types.Item;
 
 public class DoubleLinkedItem<T extends Item> implements Iterable<Item>
 {
@@ -173,7 +174,7 @@ public class DoubleLinkedItem<T extends Item> implements Iterable<Item>
 		}
 	}
 	
-	public Object getItem(int index) throws NoSuchItemException
+	public Item getItem(int index) throws NoSuchItemException
 	{
 		int base = index / arraySize;
 		if (base >= arrayNumber)

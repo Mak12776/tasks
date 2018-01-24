@@ -8,24 +8,32 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import exceptions.AsciiStringException;
 import exceptions.CorruptedFileException;
+import exceptions.NoSuchItemException;
+import exceptions.TaskRuntimeException;
 import exceptions.UnsupportedVersionException;
+import javafx.util.Pair;
 import types.DayWork;
+import types.Item;
 import types.Job;
+import types.Metadata;
 import types.Project;
-import types.ReadableWritableItem;
 import types.Task;
 import types.Todo;
+import types.interfaces.ReadableWritableItem;
+import types.interfaces.Taskable;
 
 public class Data 
 {
 	public static final byte[] dataSing = {'.', 't', 'a', 's', 'k', 's' };
 	public static final short curVers = 1;
 	
-	public static HashMap<Integer, Item> itemIdList = new HashMap<>();
+	public static LinkedList<Pair<Taskable, Integer>> itemIdList = new LinkedList<>();
 	
 	public static class infoBits
 	{
@@ -38,11 +46,67 @@ public class Data
 		public static final byte projectPause = 0x02;
 		
 		public static final byte skipIndex = 0x10;
+		public static final byte typeMask = (byte)0xE0;
 		public static final byte taskType = 0x00;
 		public static final byte jobType = 0x20;
 		public static final byte todoType = 0x40;
 		public static final byte dayworkType = 0x60;
 		public static final byte projectType = (byte)0x80;
+	}
+	
+	public static void fixItemId(DoubleLinkedItem<Item> items)
+	{
+		Pair<Taskable, Integer> pair;
+		Item item;
+		Iterator<Pair<Taskable, Integer>> iterator = itemIdList.iterator(); 
+		while (iterator.hasNext())
+		{
+			pair = iterator.next();
+			try
+			{
+				item = items.getItem(pair.getValue());
+			}
+			catch (NoSuchItemException e)
+			{
+				continue;
+			}
+			if (item instanceof Task)
+			{
+				pair.getKey().setTask((Task) item);
+				iterator.remove();
+			}
+		}
+	}
+	
+	private static void fixTaskData(TaskData data)
+	{
+		for (Item item : data.items)
+		{
+			if (item instanceof Task)
+			{
+				data.tasks.add((Task) item);
+			}
+			else if (item instanceof Job)
+			{
+				data.jobs.add((Job) item);
+			}
+			else if (item instanceof Todo)
+			{
+				data.todos.add((Todo) item);
+			}
+			else if (item instanceof DayWork)
+			{
+				data.dayWorks.add((DayWork) item);
+			}
+			else if (item instanceof Project)
+			{
+				data.projects.add((Project) item);
+			}
+			else
+			{
+				throw new ClassCastException("unknown item type: " + item.getClass().getName());
+			}
+		}
 	}
 	
 	public static void writeAsciiString(DataOutputStream stream, String string) throws IOException
@@ -78,33 +142,31 @@ public class Data
 		}
 	}
 	
-	private static Item readItem(byte infoFlag, DataInputStream stream) throws IOException, AsciiStringException
+	private static Item readItem(byte infoFlag, DataInputStream stream) throws IOException, AsciiStringException, CorruptedFileException
 	{
-		switch(infoFlag & 0xE0)
+		ReadableWritableItem result;
+		switch(infoFlag & infoBits.typeMask)
 		{
 		case infoBits.taskType:
-			Task task = new Task();
-			task.readFromStream(infoFlag, stream);
-			return task;
+			result = new Task();
+			break;
 		case infoBits.jobType:
-			Job job = new Job();
-			job.readFromStream(infoFlag, stream);
-			return job;
+			result = new Job();
+			break;
 		case infoBits.todoType:
-			Todo todo = new Todo();
-			todo.readFromStream(infoFlag, stream);
-			return todo;
+			result = new Todo();
+			break;
 		case infoBits.dayworkType:
-			DayWork daywork = new DayWork();
-			daywork.readFromStream(infoFlag, stream);
-			return daywork;
+			result = new DayWork();
+			break;
 		case infoBits.projectType:
-			Project project = new Project();
-			project.readFromStream(infoFlag, stream);
-			return project;
+			result = new Project();
+			break;
 		default:
-			return null;
+			throw new CorruptedFileException("invalid item type flag: " + (infoFlag >> 5));
 		}
+		result.readFromStream(infoFlag, stream);
+		return (Item)result;
 	}
 	
 	private static void readItems(DataInputStream stream, Reference<DoubleLinkedItem<Item>> result) throws CorruptedFileException, IOException 
@@ -153,10 +215,12 @@ public class Data
 		}
 	}
 	
-	public static void LoadData(File file, TaskData taskData) throws FileNotFoundException, IOException, CorruptedFileException
+	public static TaskData LoadData(File file) throws FileNotFoundException, IOException, CorruptedFileException
 	{
 		DataInputStream inStream = null;
 		Reference<DoubleLinkedItem<Item>> itemsReference = new Reference<DoubleLinkedItem<Item>>(null);
+		Metadata tempMetadata = new Metadata();
+		TaskData result;
 		byte [] sign = new byte[dataSing.length];
 		short version;
 		try
@@ -172,49 +236,76 @@ public class Data
 			{
 				throw new UnsupportedVersionException("unsupported data version: " + version);
 			}
-			readItems(inStream, itemsReference);
+			tempMetadata.readFromStream(inStream);
+			try
+			{
+				readItems(inStream, itemsReference);
+			}
+			catch (CorruptedFileException e)
+			{
+				e.data = new TaskData();
+				e.data.items = itemsReference.value;
+				fixItemId(e.data.items);
+				fixTaskData(e.data);
+				throw e;
+			}
 		}
 		catch(EOFException e)
 		{
 			throw new CorruptedFileException("End of file while reading");
 		}
-		catch(CorruptedFileException e)
-		{
-			
-		}
 		finally
 		{
 			if (inStream != null)
 			{
-				inStream.close();
+				try
+				{
+					inStream.close();
+				}
+				catch(IOException e)
+				{
+					
+				}
+			}
+		}
+		result = new TaskData();
+		result.items = itemsReference.value;
+		fixItemId(result.items);
+		fixTaskData(result);
+		return result;
+		
+	}
+	
+	private static void writeItems(DataOutputStream stream, DoubleLinkedItem<Item> items) throws IOException
+	{
+		int skipNumber = 0;
+		int lastId = 0;
+		stream.writeInt(items.length());
+		for (Item item : items)
+		{
+			skipNumber = item.id - lastId;
+			lastId = item.id;
+			if (item instanceof ReadableWritableItem)
+			{
+				((ReadableWritableItem) item).writeToStream(skipNumber, stream);
+			}
+			else
+			{
+				throw new ClassCastException("item type is not " + ReadableWritableItem.class.getName() + ": " + item.getClass().getName());
 			}
 		}
 	}
 	
-	public static void SaveData(File file, TaskData taskData) throws FileNotFoundException, IOException
+	public static void SaveData(File file, TaskData taskData) throws IOException
 	{
 		DataOutputStream outStream = null;
-		int lastId = 0;
-		int skipNumber = 0;
 		try
 		{
 			outStream = new DataOutputStream(new FileOutputStream(file));
 			outStream.write(dataSing);
 			outStream.writeShort(curVers);
-			outStream.writeInt(taskData.items.length());
-			for(Item item : taskData.items)
-			{
-				skipNumber = item.id - lastId;
-				lastId = item.id;
-				if (item instanceof ReadableWritableItem)
-				{
-					((ReadableWritableItem) item).writeToStream(skipNumber, outStream);
-				}
-				else
-				{
-					throw new ClassCastException("item is not type of " + ReadableWritableItem.class.getName() + ": " + item.getClass().getName());
-				}
-			}
+			taskData.metadata.writeToStream(outStream);
+			writeItems(outStream, taskData.items);
 		}
 		finally
 		{
@@ -222,6 +313,41 @@ public class Data
 			{
 				outStream.close();
 			}
+		}
+	}
+	
+	public static TaskData emptyData()
+	{
+		TaskData result = new TaskData();
+		result.metadata = Metadata.currentMetadata();
+		result.items = new DoubleLinkedItem<Item>();
+		result.todos = new LinkedList<>();
+		result.jobs = new LinkedList<>();
+		result.dayWorks = new LinkedList<>();
+		result.projects = new LinkedList<>();
+		return result;
+	}
+	
+	public static void deleteFile(File file)
+	{
+		if (!file.delete())
+		{
+			
+		}
+	}
+	
+	public static void backupFile(File file)
+	{
+		int number = 0;
+		List<String> fileNames = Arrays.asList(file.getParentFile().list());
+		String backupName = file.getName() + ".bak" + number;
+		while (fileNames.contains(backupName))
+		{
+			backupName = file.getName() + ".bak" + (++number);
+		}
+		if (!file.renameTo(new File(backupName)))
+		{
+			throw new TaskRuntimeException("Can't rename file.");
 		}
 	}
 }

@@ -4,21 +4,45 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import javafx.util.Pair;
 import tasks.Data;
-import tasks.Item;
 import tasks.Data.infoBits;
+import types.interfaces.ReadableWritableItem;
+import types.interfaces.Taskable;
 
-public class Job extends Item implements ReadableWritableItem 
+public class Job extends Item implements ReadableWritableItem, Taskable
 {
-	public Task task;
+	public Metadata metadata;
+	public Task task = null;
 	public boolean isDone;
 	public long completionDate;
+	
+	public Job()
+	{
+		// create new metadata
+		metadata = new Metadata();
+	}
+	
+	@Override
+	public Task getTask() 
+	{
+		return task;
+	}
+	
+	@Override
+	public void setTask(Task task) 
+	{
+		this.task = task;
+	}
 	
 	@Override
 	public void readFromStream(byte infoFlag, DataInputStream stream) throws IOException 
 	{
-		Data.itemIdList.put(stream.readInt(), this);
-		task = null;
+		// read metadata
+		metadata.readFromStream(stream);
+		// read task id
+		Data.itemIdList.add(new Pair<Taskable, Integer>(this, stream.readInt()));
+		// read completion date
 		if ((infoFlag & infoBits.jobDone) != 0)
 		{
 			isDone = true;
@@ -38,6 +62,7 @@ public class Job extends Item implements ReadableWritableItem
 		{
 			infoFlag |= infoBits.jobDone;
 		}
+		// write infoFlag
 		if (skipNumber != 0)
 		{
 			stream.writeByte(infoFlag | infoBits.skipIndex);
@@ -47,7 +72,11 @@ public class Job extends Item implements ReadableWritableItem
 		{
 			stream.writeByte(infoFlag);
 		}
+		// write metadata
+		metadata.writeToStream(stream);
+		// write task id
 		stream.writeInt(task.id);
+		// write completion date
 		if (isDone)
 		{
 			stream.writeLong(completionDate);

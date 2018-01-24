@@ -6,6 +6,7 @@ import tasks.TaskData;
 public class CorruptedFileException extends TaskException 
 {
 	public TaskData data;
+	
 	public CorruptedFileException(String message)
 	{
 		super(message);

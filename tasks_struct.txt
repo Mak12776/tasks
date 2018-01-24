@@ -15,8 +15,7 @@ type:
 			{ reversed: 3bit }
 			{ desc: 1bit }
 		item data:
-			{ creation date: long }
-			{ last modification date: long }
+			{ metadata: 2x long } 
 			{ title: variable }
 			if (desc) { description file name }
 	
@@ -25,6 +24,7 @@ type:
 			{ reversed: 3bit }
 			{ done: 1bit }
 		job data:
+			{ metadata: 2x long }
 			{ task id: int }
 			if (done) { completion date: long }
 		
@@ -33,6 +33,7 @@ type:
 			{ reversed: 3bit }
 			{ is limited: 1bit }
 		todo data:
+			{ metadata: 2x long }
 			{ task id: int }
 			if (is limited) { start time: long }
 			if (is limited) { end time: long }
@@ -43,6 +44,7 @@ type:
 			{ repeat: 1bit }
 			{ count: 1bit } 
 		dayWork data:
+			{ metadata: 2x long }
 			{ task id: int }
 			{ date: long }
 			if (repeat) { repeat period: byte }
@@ -54,11 +56,12 @@ type:
 			{ finished: 1bit }
 			{ hasPause: 1bit }
 		project data:
+			{ metadata: 2x long }
 			{ task id: int }
-			{ start date: long }
+			{ start day: long }
 			if (hasPause) { pause number: int }
 			if (hasPause) { pauses: long[] }
-			if (finished) { finish date }
+			if (ended) { finish date }
 		
 
 ------------------------------------------------------------------

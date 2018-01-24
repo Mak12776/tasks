@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import exceptions.ArgumentParsingException;
+import exceptions.TaskRuntimeException;
 
 public class Parser
 {
@@ -170,6 +171,7 @@ public class Parser
 				nextArgTypes.add(ArgType.title);
 				return true;
 			}
+			break;
 		case job:
 			if (option.equals("identity"))
 			{
@@ -235,8 +237,9 @@ public class Parser
 				nextArgTypes.add(ArgType.count);
 				return true;
 			}
+			break;
 		case none:
-			throw new RuntimeException("wrong behavior on option Argument");
+			throw new TaskRuntimeException("wrong itemType value: " + itemType);
 		}
 		return false;
 	}
@@ -251,6 +254,7 @@ public class Parser
 				nextArgTypes.add(ArgType.title);
 				return true;
 			}
+			break;
 		case job:
 			if (ch == 't')
 			{
@@ -272,6 +276,7 @@ public class Parser
 				nextArgTypes.add(ArgType.date);
 				return true;
 			}
+			break; 
 		case todo:
 			if (ch == 'i')
 			{
@@ -293,6 +298,7 @@ public class Parser
 				nextArgTypes.add(ArgType.until_date);
 				return true;
 			}
+			break;
 		case daywork:
 			if (ch == 'i')
 			{
@@ -315,8 +321,9 @@ public class Parser
 				nextArgTypes.add(ArgType.count);
 				return true;
 			}
+			break;
 		case none:
-			throw new RuntimeException("wrong behavior in ch argument");
+			throw new RuntimeException("wrong itemType value: " + itemType);
 		}
 		return false;
 	}
@@ -371,7 +378,7 @@ public class Parser
 					if (subStr.equals("help"))
 					{
 						printHelp();
-						return false;
+						return true;
 					}
 					if (command == CommandOrder.add)
 					{
@@ -397,7 +404,7 @@ public class Parser
 							if (Ch == 'H')
 							{
 								printHelp();
-								return false;
+								return true;
 							}
 							throw new ArgumentParsingException("invalid short global option: " + Ch);
 						}
@@ -435,6 +442,6 @@ public class Parser
 			
 			throw new ArgumentParsingException("invalid command: " + args[index]);
 		} /* for (int index = 0; index < args.length; index++) */
-		return true;
+		return false;
 	}
 }

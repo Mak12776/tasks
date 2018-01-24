@@ -10,11 +10,12 @@ commands:
 	search [type] [identity] [filter]		search the items
 	purge									
 	optimize
+	sync
 
 global options:
 	-F, --force								force to do command any way
 	-Q, --quiet								do not write status on stdout
-	-C,	--command-line						force command line to run 
+	-C,	--command-line						run command line
 	-Y, --yes								assume yes on all questions
 	-S, --short-help						print a short help and exit 
 	-H, --help								print this help and exit
@@ -33,12 +34,16 @@ info:
 		-i, --identity (identity)			specify identity
 		-t, --title (title)					specify title
 		-s, --since	(date)					specify since date (default: today)
-		-u, --until	(date)					specify until date 
+		-u, --until	(date)					specify until date (default: end of today)
 	for dayWork:
 		-i, --identity (identity)			specify identity
 		-t, --title (title)					specify title
-		-r, --repeat (repeat)				specify repeat
-		-c, --count	(count)					specify count
+		-r, --repeat (repeat)				specify repeat (default: none)
+		-c, --count	(count)					specify count (default: none)
+	for project:
+		-i, --identity (identity)			specify identity
+		-t, --title (title)					specify title
+		-s, --start (date)					specify start day (default: today)
 
 filter:
 	for task type:
